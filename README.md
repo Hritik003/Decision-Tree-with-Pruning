@@ -7,6 +7,12 @@ The Decision Tree algorithm implemented here can accommodate customizations in t
 
 The algorithm can also work with datasets containing categorical data natively, so it requires those datasets to be preprocessed such as converting ordinal data into integers. After converting all categorical string values in a dataset to integers, a user can use that dataset with the algorithm. 
 
+## Motivation
+
+Building such prediction models can aid in our understanding of a nation's population and the numerous elements influencing economic growth.
+Such variables are something that governments can comprehend and work to address, which will help the nation thrive.
+
+
 ## Steps followed:
 1. Loading the Data
 2. Data Pre-processing
@@ -18,3 +24,7 @@ The algorithm can also work with datasets containing categorical data natively, 
 ## Decision Tree
 
 ![decision tree image](https://github.com/Hritik003/Decision-Tree-with-Pruning/assets/73677045/783d0e8e-8a54-4534-83f3-400b25ee5afa)
+
+## Before-Pruning Graph
+![graph](https://github.com/Hritik003/Decision-Tree-with-Pruning/assets/73677045/31fad18d-ce47-4674-b855-76a422f535da)
+
