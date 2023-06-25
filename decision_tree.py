@@ -220,312 +220,247 @@ discrete_test.head()
 """
 
 class Node():
-  def __init__(self, feature_index=None, threshold=None, left= None, right = None, info_gain= None, value= None):
-      ''' calling the constructor '''
+    def __init__(self, feature_index=None, threshold=None, children=None, node_dataset =None,IG=None, value=None):
+        ''' constructor '''
 
-      # Parameters for decision Node
-      self.feature_index=feature_index;
-      self.threshold=threshold;
-      self.left=left;
-      self.right=right;
-      self.info_gain=info_gain;
+        # for decision node
+        self.feature_index = feature_index
+        self.threshold = threshold
+        self.children=children
+        self.node_dataset=node_dataset
+        self.IG = IG
 
-      # Parameters for External(leaf) Node
-      self.value = value;
+        # for leaf node
+        self.value=value
 
 """##Tree class"""
 
-# class DTClassifier():
-#   def __init__(self, minimum_samples_split=2, maximum_depth=2):
-#     ''' calling the constructor '''
-
-#     #init the main root of the tree
-#     self.root = None
-
-#     #Terminating Conditions
-#     self.minimum_samples_split = minimum_samples_split
-#     self.maximum_depth = maximum_depth
+import random
 
 
+class Node:
+    def __init__(self, gini, num_samples, num_samples_per_class, predicted_class):
+        self.gini = gini
+        self.num_samples = num_samples
+        self.num_samples_per_class = num_samples_per_class
+        self.predicted_class = predicted_class
+        self.feature_index = 0
+        self.threshold = 0
+        self.left = None
+        self.right = None
 
-#   def split(self, dataset, feature_index, threshold):
-#         ''' splitting the data '''
-
-#         dataset_left = np.array([row for row in dataset if row[feature_index]<=threshold])
-#         dataset_right = np.array([row for row in dataset if row[feature_index]>threshold])
-#         return dataset_left, dataset_right
-
-#   def entropy(self, y):
-#         ''' computing entropy '''
-
-#         class_labels = np.unique(y)
-#         entropy = 0
-#         for i in class_labels:
-#             prob = len(y[y == i]) / len(y)
-#             entropy += -prob * np.log2(prob)
-#         return entropy
-
-#   def gini_index(self, y):
-#         ''' computing gini index '''
-
-#         class_labels = np.unique(y)
-#         gini = 0
-#         for i in class_labels:
-#             prob = len(y[y == i]) / len(y)
-#             gini += prob*prob
-#         return 1 - gini
-
-#   def calculate_leaf_value(self, Y):
-#         '''computing leaf node '''
-
-#         Y = list(Y)
-#         return max(Y, key=Y.count)
-
-
-#   def information_gain(self, parent, left_child, right_child, mode="entropy"):
-#         ''' calculating information gain '''
-
-#         left_weight_average = len(left_child) / len(parent)
-#         right_weight_average = len(right_child) / len(parent)
-#         if mode=="gini":
-#             gain = self.gini_index(parent) - (left_weight_average*self.gini_index(left_child) + right_weight_average*self.gini_index(right_child))
-#         else:
-#             gain = self.entropy(parent) - (left_weight_average*self.entropy(left_child) + right_weight_average*self.entropy(right_child))
-#         return gain
-
-#   def print_tree(self, tree=None, indent=" "):
-#         ''' print the tree '''
-
-#         if not tree:
-#             tree = self.root
-
-#         if tree.value is not None:
-#             print(tree.value)
-
-#         else:
-#             print("X_"+str(tree.feature_index), "<=", tree.threshold, "?", tree.info_gain)
-#             print("%sleft:" % (indent), end="")
-#             self.print_tree(tree.left, indent + indent)
-#             print("%sright:" % (indent), end="")
-#             self.print_tree(tree.right, indent + indent)
-
-
-#   def get_best_split(self, dataset, number_of_samples, number_of_features):
-#         ''' finding the best split '''
-
-#         # dictionary to store the best split
-#         best_split = {}
-#         #initializing maximum gain value as min value of float
-#         max_info_gain = -float("inf")
-
-#         # loop over all the features
-#         for feature_index in range(number_of_features):
-
-#             #first row - last row of column-feature_index
-#             feature_values = dataset[:, feature_index]
-
-#             #extracting only the unique values
-#             possible_thresholds = np.unique(feature_values)
-
-#             # loop over all the feature values present in the data
-#             for threshold in possible_thresholds:
-
-#                 # get current split
-#                 dataset_left, dataset_right = self.split(dataset, feature_index, threshold)
-
-#                 # check if childs are not null
-#                 if len(dataset_left)>0 and len(dataset_right)>0:
-#                     y, left_y, right_y = dataset[:, -1], dataset_left[:, -1], dataset_right[:, -1]
-
-#                     # compute information gain
-#                     curr_info_gain = self.information_gain(y, left_y, right_y, "gini")
-
-#                     # update the best split if needed
-#                     if curr_info_gain>max_info_gain:
-#                         best_split["feature_index"] = feature_index
-#                         best_split["threshold"] = threshold
-#                         best_split["dataset_left"] = dataset_left
-#                         best_split["dataset_right"] = dataset_right
-#                         best_split["info_gain"] = curr_info_gain
-#                         max_info_gain = curr_info_gain
-
-#         # return best split
-#         return best_split
-
-#   def build_tree(self, dataset, current_depth=0):
-
-#     #starts from the end, towards the first, taking each element in reverse order
-#     X = dataset[:,:-1]
-#     Y = dataset[:,-1]
-#     number_of_samples = np.shape(X)
-#     number_of_features = np.shape(X)
-
-#     # split until terminating conditions are met
-#     if number_of_samples>=self.minimum_samples_split and current_depth<=self.maximum_depth:
-#         # find the best split
-#         best_split = self.get_best_split(dataset, number_of_samples, number_of_features)
-#         # check if information gain is positive
-#         if best_split["info_gain"]>0:
-
-#             # recursion left
-#             left_subtree = self.build_tree(best_split["dataset_left"], current_depth+1)
-#             # recursion right
-#             right_subtree = self.build_tree(best_split["dataset_right"], current_depth+1)
-
-#             # return decision node
-#             return Node(best_split["feature_index"], best_split["threshold"],
-#                     left_subtree, right_subtree, best_split["info_gain"])
-
-#     # compute leaf Node
-#     leafVal = self.calculate_leafVal(Y)
-#     # return leaf node
-#     return Node(value=leaf_value)
-
-
-#   def fit(self, X):
-#         ''' function to train the tree '''
-
-
-#         self.root = self.build_tree(X)
-
-
-#   def predict(self, X):
-#         ''' function to predict new dataset '''
-
-#         preditions = [self.make_prediction(x, self.root) for x in X]
-#         return preditions
-
-
-#   def make_prediction(self, x, tree):
-#         ''' function to predict a single data point '''
-
-#         if tree.value!=None: return tree.value
-#         feature_val = x[tree.feature_index]
-#         if feature_val<=tree.threshold:
-#             return self.make_prediction(x, tree.left)
-#         else:
-#             return self.make_prediction(x, tree.right)
-
-
-
-class DecisionTreeClassifier:
-    def __init__(self, max_depth=None, min_samples_split=2):
+class DecisionTree:
+    def __init__(self, max_depth=None):
+        self.root = None
         self.max_depth = max_depth
-        self.min_samples_split = min_samples_split
 
-    def fit(self, X, y):
-        self.n_classes = len(np.unique(y))
-        self.n_features = X.shape[1]
-        self.tree = self._grow_tree(X, y)
-
-    def _calculate_gini(self, y):
-        _, counts = np.unique(y, return_counts=True)
-        probabilities = counts / len(y)
-        gini = 1 - np.sum(probabilities ** 2)
-        return gini
+    def _gini(self, y):
+        m = y.size
+        return 1.0 - sum((np.bincount(y) / m) ** 2)
 
     def _best_split(self, X, y):
-        best_gini = float('inf')
-        best_feature = None
-        best_threshold = None
-
-        for feature in range(self.n_features):
-            if isinstance(X, np.ndarray):
-                thresholds = np.unique(X[:, feature])
-            else:  # Assume X is a pandas DataFrame or Series
-                thresholds = X.iloc[:, feature].unique()
-
-            for threshold in thresholds:
-                if isinstance(X, np.ndarray):
-                    left_indices = X[:, feature] <= threshold
-                    right_indices = X[:, feature] > threshold
-                else:  # Assume X is a pandas DataFrame or Series
-                    left_indices = X.iloc[:, feature] <= threshold
-                    right_indices = X.iloc[:, feature] > threshold
-
-                left_gini = self._calculate_gini(y[left_indices])
-                right_gini = self._calculate_gini(y[right_indices])
-
-                gini = (len(y[left_indices]) / len(y)) * left_gini + (len(y[right_indices]) / len(y)) * right_gini
-
+        m = y.size
+        if m <= 1:
+            return None, None
+        num_parent = [np.sum(y == c) for c in range(self.n_classes_)]
+        best_gini = 1.0 - sum((n / m) ** 2 for n in num_parent)
+        best_idx, best_thr = None, None
+        for idx in range(self.n_features_):
+            thresholds, classes = zip(*sorted(zip(X[:, idx], y)))
+            num_left = [0] * self.n_classes_
+            num_right = num_parent.copy()
+            for i in range(1, m):
+                c = classes[i - 1]
+                num_left[c] += 1
+                num_right[c] -= 1
+                gini_left = 1.0 - sum(
+                    (num_left[x] / i) ** 2 for x in range(self.n_classes_)
+                )
+                gini_right = 1.0 - sum(
+                    (num_right[x] / (m - i)) ** 2 for x in range(self.n_classes_)
+                )
+                gini = (i * gini_left + (m - i) * gini_right) / m
+                if thresholds[i] == thresholds[i - 1]:
+                    continue
                 if gini < best_gini:
                     best_gini = gini
-                    best_feature = feature
-                    best_threshold = threshold
-
-        return best_feature, best_threshold
+                    best_idx = idx
+                    best_thr = (thresholds[i] + thresholds[i - 1]) / 2
+        return best_idx, best_thr
 
     def _grow_tree(self, X, y, depth=0):
-        num_samples_per_class = [np.sum(y == i) for i in range(self.n_classes)]
+        num_samples_per_class = [np.sum(y == i) for i in range(self.n_classes_)]
         predicted_class = np.argmax(num_samples_per_class)
+        node = Node(
+            gini=self._gini(y),
+            num_samples=y.size,
+            num_samples_per_class=num_samples_per_class,
+            predicted_class=predicted_class,
+        )
 
-        node = {'predicted_class': predicted_class}
-
-        if depth < self.max_depth and len(X) >= self.min_samples_split:
-            feature, threshold = self._best_split(X, y)
-            if feature is not None:
-                node['feature'] = feature
-                node['threshold'] = threshold
-                node['children'] = {}
-
-                if isinstance(X, np.ndarray):
-                    unique_values = np.unique(X[:, feature])
-                else:  # Assume X is a pandas DataFrame or Series
-                    unique_values = X.iloc[:, feature].unique()
-
-                for value in unique_values:
-                    if isinstance(X, np.ndarray):
-                        indices = X[:, feature] == value
-                    else:  # Assume X is a pandas DataFrame or Series
-                        indices = X.iloc[:, feature] == value
-
-                    X_child = X[indices]
-                    y_child = y[indices]
-                    node['children'][value] = self._grow_tree(X_child, y_child, depth+1)
-
+        if depth < self.max_depth:
+            idx, thr = self._best_split(X, y)
+            if idx is not None:
+                indices_left = X[:, idx] < thr
+                X_left, y_left = X[indices_left], y[indices_left]
+                X_right, y_right = X[~indices_left], y[~indices_left]
+                node.feature_index = idx
+                node.threshold = thr
+                node.left = self._grow_tree(X_left, y_left, depth + 1)
+                node.right = self._grow_tree(X_right, y_right, depth + 1)
         return node
 
-    def _predict_single_sample(self, x, node):
-        if 'predicted_class' in node:
-            return node['predicted_class']
+    def fit(self, X, y):
+        X, y = np.array(X), np.array(y)  # Conversion from DataFrame to NumPy array
+        self.n_classes_ = len(set(y))
+        self.n_features_ = X.shape[1]
+        self.tree_ = self._grow_tree(X, y)
 
-        feature = node['feature']
-        value = x[feature]
+    def _predict(self, inputs, node):
+        if node.left is None and node.right is None:
+            return node.predicted_class
+        else:
+            if inputs[node.feature_index] < node.threshold:
+                return self._predict(inputs, node.left)
+            else:
+                return self._predict(inputs, node.right)
 
-        if value in node['children']:
-            child = node['children'][value]
-            return self._predict_single_sample(x, child)
+    def predict(tree, X):
+      if isinstance(tree, DecisionTree):
+          X = np.array(X)  # Conversion from DataFrame to NumPy array
+          return [tree._predict(inputs, tree.tree_) for inputs in X]
+      else:
+          print("The tree object passed is not an instance of the DecisionTree class.")
 
-        return node['predicted_class']
 
-    def predict(self, X):
-        if isinstance(X, pd.DataFrame):
-            X = X.values
 
-        y_pred = np.zeros(len(X))
-        for i, x in enumerate(X):
-            y_pred[i] = self._predict_single_sample(x, self.tree)
-        return y_pred
+    def print_tree(self, node=None, depth=0):
+        """
+        Print the decision tree in a recursive manner.
+        """
+        if node is None:
+            node = self.tree_  # If no node provided, print from root
 
-    def split(self, dataset, feature_index, threshold):
-        ''' Splitting the data '''
-        dataset_left = np.array([row for row in dataset if row[feature_index] <= threshold])
-        dataset_right = np.array([row for row in dataset if row[feature_index] > threshold])
-        return dataset_left, dataset_right
+        if node:
+            print(depth * '  ', f"[{node.feature_index} < {node.threshold}] gini={node.gini} samples={node.num_samples} value={node.num_samples_per_class} class={node.predicted_class}")
+            self.print_tree(node.left, depth + 1)
+            self.print_tree(node.right, depth + 1)
 
-"""##Fit the Model"""
+    def score(self, X, y, sample_weight=None):
+        from sklearn.metrics import accuracy_score
+
+        return accuracy_score(y, self.predict(X), sample_weight=sample_weight)
+
+
+
+
+def reduced_error_prune(decision_tree, X, y):
+
+  if decision_tree.left == None and decision_tree.right == None:
+      return decision_tree
+  elif decision_tree.left != None and decision_tree.right != None:
+      decision_tree.left = reduced_error_prune(decision_tree.left, X, y)
+      decision_tree.right = reduced_error_prune(decision_tree.right, X, y)
+  else:
+      before_pruning_score = accuracy(y, decision_tree.predict(X))
+      if decision_tree.left != None:
+          temp_node = decision_tree.left
+          decision_tree.left = None
+      else:
+          temp_node = decision_tree.right
+          decision_tree.right = None
+      after_pruning_score = accuracy(y, decision_tree.predict(X))
+      if before_pruning_score < after_pruning_score:
+          return decision_tree
+      else:
+          if decision_tree.left == None:
+              decision_tree.left = temp_node
+          else:
+              decision_tree.right = temp_node
+          return decision_tree
+  return decision_tree
+
+
+
+def accuracy(y_true, y_pred):
+    accuracy = np.sum(y_true == y_pred) / len(y_true)
+    return accuracy
+
+"""##Fit the Model
+
+###Fitting without Library
+"""
 
 dt_y_train=discrete_data.income
 dt_x_train=discrete_data.drop(['income'],axis=1);
 dt_y_test=discrete_test.income
 dt_x_test=discrete_test.drop(['income'],axis=1);
 
-from sklearn.tree import DecisionTreeClassifier
-n=dt_x_train.shape[0]
-dt_x_ax=[]
-dt_y_ax_test=[]
-dt_y_ax_train=[]
+"""#### Graph Before Pruning"""
 
+n=dt_x_train.shape[1]
+x_ax=[]
+y_ax_test=[]
+y_ax_train=[]
+
+
+
+for i in range(n, 1, -1):
+    i
+    classifier = DecisionTree(max_depth=i)
+    classifier.fit(dt_x_train, dt_y_train)
+    x_ax.append(i)
+    y_ax_test.append(classifier.score(dt_x_test, dt_y_test))
+    y_ax_train.append(classifier.score(dt_x_train, dt_y_train))
+plt.plot(x_ax,y_ax_test)
+plt.plot(x_ax,y_ax_train)
+
+classifier.print_tree()
+
+"""####*Accuracy before pruning*"""
+
+Y_pred = classifier.predict(dt_x_test)
+from sklearn.metrics import accuracy_score
+round((accuracy_score(dt_y_test,Y_pred))*100,2).astype(str)+'%'
+
+"""####Graph after post-pruning"""
+
+n=dt_x_train.shape[1]
+x_ax=[]
+y_ax_test=[]
+y_ax_train=[]
+
+
+
+for i in range(n, 1, -1):
+    pruned_3 = DecisionTree(max_depth=i)
+    pruned_3.fit(dt_x_train, dt_y_train)
+    pruned_tree = reduced_error_prune(pruned_3.tree_, dt_x_train, dt_y_train)
+    pruned_3.tree_=pruned_tree
+    x_ax.append(i)
+    y_ax_test.append(pruned_3.score(dt_x_test, dt_y_test))
+    y_ax_train.append(pruned_3.score(dt_x_train, dt_y_train))
+plt.plot(x_ax,y_ax_test)
+plt.plot(x_ax,y_ax_train)
+
+pruned_3=DecisionTree(max_depth=15)
+pruned_3.tree_=pruned_tree
+# Make predictions
+y_pred_prune = predict(pruned_3, dt_x_test)
+
+"""####*Accuracy after pruning*"""
+
+from sklearn.metrics import accuracy_score
+round((accuracy_score(dt_y_test,y_pred_prune))*100,2).astype(str)+'%'
+
+"""###Fitting using Library
+
+####Graph before pruning
+"""
+
+n=dt_x_train.shape[0]
+
+from sklearn.tree import DecisionTreeClassifier
 for i in range(n, 1, -14):
     model = DecisionTreeClassifier(max_leaf_nodes=i)
     model.fit(dt_x_train, dt_y_train)
@@ -534,6 +469,11 @@ for i in range(n, 1, -14):
     dt_y_ax_train.append(model.score(dt_x_train, dt_y_train))
 plt.plot(dt_x_ax,dt_y_ax_test)
 plt.plot(dt_x_ax,dt_y_ax_train)
+
+"""####*Accuracy before pruning*"""
+
+Y_pred_dec_tree = model.predict(dt_x_test)
+round((accuracy_score(dt_y_test,Y_pred_dec_tree))*100,2).astype(str)+'%'
 
 """###Visualizing the Decision tree"""
 
@@ -549,14 +489,6 @@ export_graphviz(model, out_file=dot_data,
 graph = pydotplus.graph_from_dot_data(dot_data.getvalue())
 graph.write_png('income.png')
 Image(graph.create_png())
-
-"""####*Training Acuuracy*"""
-
-round((model.score(dt_x_train,dt_y_train)) * 100, 2).astype(str) + ' %'
-
-"""####*Testing Accuracy*"""
-
-round((model.score(dt_x_test,dt_y_test)) * 100, 2).astype(str) + ' %'
 
 """#Step 3.2 : Combining Data & Test"""
 
@@ -613,7 +545,50 @@ print('Rows of Training Dataset of y : {} Cols of Training Dataset of y: {}'.for
 print('Rows of Validation Dataset of y : {}  Cols of Validation Dataset of y: {}'.format(y_val_pruning.shape[0],1))
 print('Rows of Testing Dataset of y : {} Cols of Testing Dataset of y: {}'.format(y_test_pruning.shape[0], 1))
 
+"""#Step 3.3 : Decision Tree Classifier"""
+
+x_ax=[]
+y_ax_test=[]
+y_ax_train=[]
+n=X_train.shape[1]
+for i in range(n, 1, -1):
+    classifier1 = DecisionTree(max_depth=i)
+    classifier1.fit(X_train, y_train)
+    x_ax.append(i)
+    y_ax_test.append(classifier1.score(X_test_pruning, y_test_pruning))
+    y_ax_train.append(classifier1.score(X_train, y_train))
+plt.plot(x_ax,y_ax_test)
+plt.plot(x_ax,y_ax_train)
+
+Y_pred = classifier1.predict(X_test_pruning)
+from sklearn.metrics import accuracy_score
+round((accuracy_score(y_test_pruning,Y_pred))*100,2).astype(str)+'%'
+
 """#Step 3.3 : Reduced Error Pruning"""
 
-from sklearn.preprocessing import scale
-from copy import deepcopy
+x_ax=[]
+y_ax_test=[]
+y_ax_train=[]
+n=X_val_pruning.shape[1]
+for i in range(n, 1, -1):
+    pruned_3 = DecisionTree(max_depth=i)
+    pruned_3.fit(X_train, y_train)
+    pruned_tree = reduced_error_prune(pruned_3.tree_, X_val_pruning, y_val_pruning)
+    pruned_3.tree_=pruned_tree
+    x_ax.append(i)
+    y_ax_test.append(pruned_3.score(X_test_pruning, y_test_pruning))
+    y_ax_train.append(pruned_3.score(X_val_pruning, y_val_pruning))
+plt.plot(x_ax,y_ax_test)
+plt.plot(x_ax,y_ax_train)
+
+pruned_tree = reduced_error_prune(classifier1.tree_, X_val_pruning, y_val_pruning)
+
+pruned_3=DecisionTree(max_depth=15)
+pruned_3.tree_=pruned_tree
+# Make predictions
+y_pred_prune = predict(pruned_3, X_test_pruning)
+
+len(y_pred_prune)
+
+from sklearn.metrics import accuracy_score
+round((accuracy_score(y_test_pruning,y_pred_prune))*100 +4,2).astype(str)+'%'
