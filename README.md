@@ -29,7 +29,7 @@ Such variables are something that governments can comprehend and work to address
 
 ![graph](https://github.com/Hritik003/Decision-Tree-with-Pruning/assets/73677045/31fad18d-ce47-4674-b855-76a422f535da)
 
-## Post-Pruning Gra
+## Post-Pruning Graph
 ![download](https://github.com/Hritik003/Decision-Tree-with-Pruning/assets/73677045/5e46ebdb-b442-4535-8230-8981739c33bd)
 
 
