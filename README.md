@@ -26,5 +26,11 @@ Such variables are something that governments can comprehend and work to address
 ![decision tree image](https://github.com/Hritik003/Decision-Tree-with-Pruning/assets/73677045/783d0e8e-8a54-4534-83f3-400b25ee5afa)
 
 ## Before-Pruning Graph
+
 ![graph](https://github.com/Hritik003/Decision-Tree-with-Pruning/assets/73677045/31fad18d-ce47-4674-b855-76a422f535da)
+
+## Post-Pruning Gra
+![download](https://github.com/Hritik003/Decision-Tree-with-Pruning/assets/73677045/5e46ebdb-b442-4535-8230-8981739c33bd)
+
+
 
