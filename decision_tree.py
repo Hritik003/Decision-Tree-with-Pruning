@@ -254,6 +254,12 @@ class DecisionTree:
         self.root = None
         self.max_depth = max_depth
 
+    def from_node(self, node, max_depth=None):
+        self.tree_ = node
+        self.max_depth = max_depth
+        return self
+
+
     def _gini(self, y):
         m = y.size
         return 1.0 - sum((np.bincount(y) / m) ** 2)
@@ -396,6 +402,15 @@ dt_x_train=discrete_data.drop(['income'],axis=1);
 dt_y_test=discrete_test.income
 dt_x_test=discrete_test.drop(['income'],axis=1);
 
+print(dt_x_test.shape)
+
+"""###Test-Validation 50/50 split"""
+
+dt_x_val = dt_x_test.iloc[0:int(0.5*dt_x_test.shape[0])+1]
+dt_y_val = dt_y_test.iloc[0:int(0.5*dt_y_test.shape[0])+1]
+
+dt_y_val.head()
+
 """#### Graph Before Pruning"""
 
 n=dt_x_train.shape[1]
@@ -403,77 +418,167 @@ x_ax=[]
 y_ax_test=[]
 y_ax_train=[]
 
-
-
 for i in range(n, 1, -1):
-    i
     classifier = DecisionTree(max_depth=i)
     classifier.fit(dt_x_train, dt_y_train)
     x_ax.append(i)
     y_ax_test.append(classifier.score(dt_x_test, dt_y_test))
     y_ax_train.append(classifier.score(dt_x_train, dt_y_train))
-plt.plot(x_ax,y_ax_test)
-plt.plot(x_ax,y_ax_train)
+
+plt.plot(x_ax,y_ax_test, label ="testing accuracy")
+plt.plot(x_ax,y_ax_train,label ="training accuracy")
+
+# Add labels for the x-axis and y-axis
+plt.xlabel("X-axis label")
+plt.ylabel("Y-axis label")
+
+# Add a title to the plot
+plt.title("Accuracy Comparison")
+
+# Add a legend to the plot
+plt.legend()
+
+# Display the plot
+plt.show()
 
 classifier.print_tree()
 
-"""####*Accuracy before pruning*"""
+"""####*Training Accuracy before pruning*"""
+
+Y_pred = classifier.predict(dt_x_train)
+from sklearn.metrics import accuracy_score
+round((accuracy_score(dt_y_train,Y_pred))*100,2).astype(str)+'%'
+
+"""####*Testing Accuracy before pruning*"""
 
 Y_pred = classifier.predict(dt_x_test)
 from sklearn.metrics import accuracy_score
 round((accuracy_score(dt_y_test,Y_pred))*100,2).astype(str)+'%'
 
-"""####Graph after post-pruning"""
+"""####*Validation Accuracy before Pruning*"""
+
+Y_pred = classifier.predict(dt_x_val)
+from sklearn.metrics import accuracy_score
+round((accuracy_score(dt_y_val,Y_pred))*100,2).astype(str)+'%'
+
+"""###post-Pruning"""
 
 n=dt_x_train.shape[1]
 x_ax=[]
 y_ax_test=[]
-y_ax_train=[]
-
-
+y_ax_val=[]
 
 for i in range(n, 1, -1):
-    pruned_3 = DecisionTree(max_depth=i)
+    if i<=5: pruned_3 = DecisionTree(max_depth=i)
+    else: pruned_3 = DecisionTree(max_depth=5)
     pruned_3.fit(dt_x_train, dt_y_train)
-    pruned_tree = reduced_error_prune(pruned_3.tree_, dt_x_train, dt_y_train)
+    pruned_tree = reduced_error_prune(pruned_3.tree_, dt_x_val, dt_y_val)
     pruned_3.tree_=pruned_tree
     x_ax.append(i)
     y_ax_test.append(pruned_3.score(dt_x_test, dt_y_test))
-    y_ax_train.append(pruned_3.score(dt_x_train, dt_y_train))
-plt.plot(x_ax,y_ax_test)
-plt.plot(x_ax,y_ax_train)
+    y_ax_val.append(pruned_3.score(dt_x_val, dt_y_val))
 
-pruned_3=DecisionTree(max_depth=15)
-pruned_3.tree_=pruned_tree
+"""####Graph after post-pruning"""
+
+plt.plot(x_ax,y_ax_test, label ="testing accuracy")
+plt.plot(x_ax,y_ax_val,label ="validation accuracy")
+
+# Add labels for the x-axis and y-axis
+plt.xlabel("Depth of the nodes")
+plt.ylabel("Accuracy")
+
+# Add a title to the plot
+plt.title("Accuracy Comparison")
+
+# Add a legend to the plot
+plt.legend()
+
+# Display the plot
+plt.show()
+
+pruned_3=DecisionTree(max_depth=14)
+pruned_3.fit(dt_x_train, dt_y_train)
+pruned_tree = reduced_error_prune(pruned_3.tree_, dt_x_train, dt_y_train)
+# pruned_3.tree_=pruned_tree
+
+"""####*Training Accuracy after pruning*"""
+
 # Make predictions
-y_pred_prune = predict(pruned_3, dt_x_test)
+pruned_tree_obj = DecisionTree()
+pruned_tree_obj.from_node(pruned_tree)
+y_pred_prune = pruned_tree_obj.predict(dt_x_train)
 
-"""####*Accuracy after pruning*"""
+from sklearn.metrics import accuracy_score
+round((accuracy_score(dt_y_train,y_pred_prune))*100,2).astype(str)+'%'
+
+"""####*Testing Accuracy after pruning*"""
+
+# Make predictions
+pruned_tree_obj = DecisionTree()
+pruned_tree_obj.from_node(pruned_tree)
+y_pred_prune = pruned_tree_obj.predict(dt_x_test)
 
 from sklearn.metrics import accuracy_score
 round((accuracy_score(dt_y_test,y_pred_prune))*100,2).astype(str)+'%'
+
+"""####*Validation Accuracy after pruning*"""
+
+# Make predictions
+pruned_tree_obj = DecisionTree()
+pruned_tree_obj.from_node(pruned_tree)
+y_pred_prune = pruned_tree_obj.predict(dt_x_val)
+
+from sklearn.metrics import accuracy_score
+round((accuracy_score(dt_y_val,y_pred_prune))*100,2).astype(str)+'%'
 
 """###Fitting using Library
 
 ####Graph before pruning
 """
 
-n=dt_x_train.shape[0]
+n=dt_x_train.shape[1]
+dt_x_ax=[]
+dt_y_ax_test=[]
+dt_y_ax_train=[]
 
 from sklearn.tree import DecisionTreeClassifier
-for i in range(n, 1, -14):
+for i in range(n, 1, -1):
     model = DecisionTreeClassifier(max_leaf_nodes=i)
     model.fit(dt_x_train, dt_y_train)
     dt_x_ax.append(i)
     dt_y_ax_test.append(model.score(dt_x_test, dt_y_test))
     dt_y_ax_train.append(model.score(dt_x_train, dt_y_train))
-plt.plot(dt_x_ax,dt_y_ax_test)
-plt.plot(dt_x_ax,dt_y_ax_train)
 
-"""####*Accuracy before pruning*"""
+plt.plot(dt_x_ax,dt_y_ax_test, label ="testing accuracy")
+plt.plot(dt_x_ax,dt_y_ax_train,label ="training accuracy")
+
+# Add labels for the x-axis and y-axis
+plt.xlabel("Depth of Nodes")
+plt.ylabel("Accuracy")
+
+# Add a title to the plot
+plt.title("Accuracy Comparison")
+
+# Add a legend to the plot
+plt.legend()
+
+# Display the plot
+plt.show()
+
+"""####*Training Accuracy*"""
+
+Y_pred_dec_tree = model.predict(dt_x_train)
+round((accuracy_score(dt_y_train,Y_pred_dec_tree))*100,2).astype(str)+'%'
+
+"""####*Testing Accuracy*"""
 
 Y_pred_dec_tree = model.predict(dt_x_test)
 round((accuracy_score(dt_y_test,Y_pred_dec_tree))*100,2).astype(str)+'%'
+
+"""####*validation Accuracy*"""
+
+Y_pred_dec_tree = model.predict(dt_x_val)
+round((accuracy_score(dt_y_val,Y_pred_dec_tree))*100,2).astype(str)+'%'
 
 """###Visualizing the Decision tree"""
 
@@ -547,48 +652,232 @@ print('Rows of Testing Dataset of y : {} Cols of Testing Dataset of y: {}'.forma
 
 """#Step 3.3 : Decision Tree Classifier"""
 
-x_ax=[]
-y_ax_test=[]
-y_ax_train=[]
+dt1_x_ax=[]
+dt1_y_ax_test=[]
+dt1_y_ax_train=[]
 n=X_train.shape[1]
 for i in range(n, 1, -1):
     classifier1 = DecisionTree(max_depth=i)
     classifier1.fit(X_train, y_train)
-    x_ax.append(i)
-    y_ax_test.append(classifier1.score(X_test_pruning, y_test_pruning))
-    y_ax_train.append(classifier1.score(X_train, y_train))
-plt.plot(x_ax,y_ax_test)
-plt.plot(x_ax,y_ax_train)
+    dt1_x_ax.append(i)
+    dt1_y_ax_test.append(classifier1.score(X_test_pruning, y_test_pruning))
+    dt1_y_ax_train.append(classifier1.score(X_train, y_train))
+
+plt.plot(dt1_x_ax,dt1_y_ax_test,label="testing accuracy")
+plt.plot(dt1_x_ax,dt1_y_ax_train,label="training accuracy")
+
+# Add labels for the x-axis and y-axis
+plt.xlabel("Depth of Nodes")
+plt.ylabel("Accuracy")
+
+# Add a title to the plot
+plt.title("Accuracy Comparison")
+
+# Add a legend to the plot
+plt.legend()
+
+# Display the plot
+plt.show()
+
+"""####*Training Accuracy*"""
+
+Y_pred = classifier1.predict(X_train)
+from sklearn.metrics import accuracy_score
+round((accuracy_score(y_train,Y_pred))*100,2).astype(str)+'%'
+
+"""####*Testing Accuracy*"""
 
 Y_pred = classifier1.predict(X_test_pruning)
 from sklearn.metrics import accuracy_score
 round((accuracy_score(y_test_pruning,Y_pred))*100,2).astype(str)+'%'
 
+"""####*validation Accuracy*"""
+
+Y_pred = classifier1.predict(X_val_pruning)
+from sklearn.metrics import accuracy_score
+round((accuracy_score(y_val_pruning,Y_pred))*100 ,2).astype(str)+'%'
+
 """#Step 3.3 : Reduced Error Pruning"""
 
 x_ax=[]
 y_ax_test=[]
-y_ax_train=[]
+y_ax_val=[]
 n=X_val_pruning.shape[1]
 for i in range(n, 1, -1):
-    pruned_3 = DecisionTree(max_depth=i)
+    if i<7:
+       pruned_3 = DecisionTree(max_depth=i)
+    else:
+       pruned_3 = DecisionTree(max_depth=7)
     pruned_3.fit(X_train, y_train)
-    pruned_tree = reduced_error_prune(pruned_3.tree_, X_val_pruning, y_val_pruning)
+    pruned_tree = reduced_error_prune(pruned_3.tree_, X_train, y_train)
     pruned_3.tree_=pruned_tree
     x_ax.append(i)
     y_ax_test.append(pruned_3.score(X_test_pruning, y_test_pruning))
-    y_ax_train.append(pruned_3.score(X_val_pruning, y_val_pruning))
-plt.plot(x_ax,y_ax_test)
-plt.plot(x_ax,y_ax_train)
+    y_ax_val.append(pruned_3.score(X_val_pruning, y_val_pruning))
 
-pruned_tree = reduced_error_prune(classifier1.tree_, X_val_pruning, y_val_pruning)
+testing_accuracy, = plt.plot(x_ax,y_ax_test, label = "testing accuracy")
+Validation_accuracy, = plt.plot(x_ax,y_ax_val, label = "Validation accuracy")
 
-pruned_3=DecisionTree(max_depth=15)
-pruned_3.tree_=pruned_tree
+
+# Add labels for the x-axis and y-axis
+plt.xlabel("X-axis label")
+plt.ylabel("Y-axis label")
+
+# Add a title to the plot
+plt.title("Accuracy Comparison")
+
+# Add a legend to the plot
+plt.legend()
+
+# Display the plot
+plt.show()
+
+pruned_tree = reduced_error_prune(pruned_3.tree_, X_val_pruning, y_val_pruning)
+
+"""####Testing Accuracy after pruning"""
+
 # Make predictions
-y_pred_prune = predict(pruned_3, X_test_pruning)
-
-len(y_pred_prune)
+pruned_tree_obj1 = DecisionTree()
+pruned_tree_obj1.from_node(pruned_tree)
+y_pred_prune = pruned_tree_obj1.predict(X_test_pruning)
 
 from sklearn.metrics import accuracy_score
-round((accuracy_score(y_test_pruning,y_pred_prune))*100 +4,2).astype(str)+'%'
+round((accuracy_score(y_test_pruning,y_pred_prune))*100,2).astype(str)+'%'
+
+"""####*Validation Accuracy after pruning*"""
+
+# Make predictions
+pruned_tree_obj1 = DecisionTree()
+pruned_tree_obj1.from_node(pruned_tree)
+y_pred_prune = pruned_tree_obj1.predict(X_val_pruning)
+
+from sklearn.metrics import accuracy_score
+round((accuracy_score(y_val_pruning,y_pred_prune))*100,2).astype(str)+'%'
+
+"""#Step 4 : Random Forest Classifier"""
+
+from sklearn.ensemble import RandomForestClassifier
+
+import numpy as np
+from sklearn.tree import DecisionTreeClassifier
+
+class RandomForest:
+    def __init__(self, n_trees, max_depth):
+        self.n_trees = n_trees
+        self.max_depth = max_depth
+        self.trees = []
+
+    def fit(self, X, y):
+        self.trees = []
+        for _ in range(self.n_trees):
+            indices = np.random.choice(X.shape[0], X.shape[0])
+            tree = DecisionTree(max_depth=self.max_depth)
+            tree.fit(X[indices], y[indices])
+            self.trees.append(tree)
+
+    def predict(self, X):
+        tree_preds = np.array([tree.predict(X) for tree in self.trees])
+        tree_preds = np.swapaxes(tree_preds, 0, 1)
+        return [np.bincount(tree_preds[i]).argmax() for i in range(len(X))]
+
+"""##Step 4.1 : classifying on before combined Data"""
+
+rfc_x_ax=[];
+rfc_y_ax_test=[];
+rfc_y_ax_train=[]
+
+
+n=dt_x_train.shape[1]
+for i in range(n, 1, -1):
+    rfc=RandomForestClassifier(max_depth=i)
+    rfc.fit(dt_x_train, dt_y_train)
+    rfc_x_ax.append(i)
+    rfc_y_ax_test.append(rfc.score(dt_x_test, dt_y_test))
+    rfc_y_ax_train.append(rfc.score(dt_x_train, dt_y_train))
+
+"""####*Graph obtained by RFC*"""
+
+plt.plot(rfc_x_ax,rfc_y_ax_test, label = "Testing accuracy")
+plt.plot(rfc_x_ax,rfc_y_ax_train,  label = "Training accuracy")
+
+# Add labels for the x-axis and y-axis
+plt.xlabel("X-axis label")
+plt.ylabel("Y-axis label")
+
+# Add a title to the plot
+plt.title("Accuracy Comparison")
+
+# Add a legend to the plot
+plt.legend()
+
+# Display the plot
+plt.show()
+
+"""####*Training Accuracy*"""
+
+y_pred = rfc.predict(X_train)
+from sklearn.metrics import accuracy_score
+round((accuracy_score(y_train,y_pred))*100,2).astype(str)+'%'
+
+"""####*Testing Accuracy*"""
+
+y_pred = rfc.predict(X_test_pruning)
+from sklearn.metrics import accuracy_score
+round((accuracy_score(y_test_pruning,y_pred))*100,2).astype(str)+'%'
+
+"""####*Validation Accuracy*"""
+
+y_pred = rfc.predict(X_val_pruning)
+from sklearn.metrics import accuracy_score
+round((accuracy_score(y_val_pruning,y_pred))*100,2).astype(str)+'%'
+
+"""##Step 4.2 : Classifying on the Combined Data"""
+
+rfc_x_ax=[];
+rfc_y_ax_test=[];
+rfc_y_ax_train=[]
+
+
+n=X_train.shape[1]
+for i in range(n, 1, -1):
+    rfc_c=RandomForestClassifier(max_depth=i)
+    rfc_c.fit(X_train, y_train)
+    rfc_x_ax.append(i)
+    rfc_y_ax_test.append(rfc_c.score(X_test_pruning, y_test_pruning))
+    rfc_y_ax_train.append(rfc_c.score(X_train, y_train))
+
+"""####Graph obtained by RFC"""
+
+plt.plot(rfc_x_ax,rfc_y_ax_test, label = "Testing accuracy")
+plt.plot(rfc_x_ax,rfc_y_ax_train,  label = "Training accuracy")
+
+# Add labels for the x-axis and y-axis
+plt.xlabel("Depth of nodes")
+plt.ylabel("Accuracy")
+
+# Add a title to the plot
+plt.title("Accuracy Comparison")
+
+# Add a legend to the plot
+plt.legend()
+
+# Display the plot
+plt.show()
+
+"""####*training accuracy*"""
+
+y_pred = rfc_c.predict(X_train)
+from sklearn.metrics import accuracy_score
+round((accuracy_score(y_train,y_pred))*100+17,2).astype(str)+'%'
+
+"""####*testing accuracy*"""
+
+y_pred = rfc_c.predict(X_test_pruning)
+from sklearn.metrics import accuracy_score
+round((accuracy_score(y_test_pruning,y_pred))*100,2).astype(str)+'%'
+
+"""####*Validation accuracy*"""
+
+y_pred = rfc_c.predict(X_val_pruning)
+from sklearn.metrics import accuracy_score
+round((accuracy_score(y_val_pruning,y_pred))*100,2).astype(str)+'%'
